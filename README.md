@@ -17,5 +17,6 @@ docker-compose down
 ## Credentials
 
 - Server: `localhost` or `db` (for adminer on `localhost:8080`)
+- Database: `demo`
 - User: `admin`
 - Password: `password`
