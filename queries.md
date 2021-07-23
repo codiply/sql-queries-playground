@@ -20,6 +20,7 @@ select lag(flight_no) over (
      , *
 from flights
 where actual_arrival is not null
+  and arrival_airport = 'DME'
 ) as this
 left join flights as previous 
   on this.previous_arrival_flight_no = previous.flight_no
