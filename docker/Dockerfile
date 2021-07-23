@@ -6,7 +6,11 @@ RUN  apt-get update \
      unzip \
   && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://edu.postgrespro.com/demo-small-en.zip -O /tmp/demo.zip
+# ARG DATA_SIZE=small
+ARG DATA_SIZE=medium
+# ARG DATA_SIZE=big
+
+RUN wget https://edu.postgrespro.com/demo-${DATA_SIZE}-en-20170815.zip -O /tmp/demo.zip
 RUN unzip /tmp/demo.zip
 RUN sed -i 's/DROP DATABASE demo;//g' *.sql
 RUN mv *.sql /docker-entrypoint-initdb.d/
