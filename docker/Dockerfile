@@ -7,8 +7,8 @@ RUN  apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # ARG DATA_SIZE=small
-# ARG DATA_SIZE=medium
-ARG DATA_SIZE=big
+ARG DATA_SIZE=medium
+# ARG DATA_SIZE=big
 
 RUN wget https://edu.postgrespro.com/demo-${DATA_SIZE}-en-20170815.zip -O /tmp/demo.zip
 RUN unzip /tmp/demo.zip

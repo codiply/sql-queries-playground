@@ -14,7 +14,13 @@ Depending on the size of the data, it might take long to populate the database. 
 docker-compose logs -f
 ```
 
-Remove
+or check the cpu usage to see when it is done
+
+```
+docker stats
+```
+
+Remove the containers
 
 ```
 docker-compose down
@@ -32,3 +38,7 @@ docker-compose build --no-cache
 - Database: `demo`
 - User: `admin`
 - Password: `password`
+
+## Queries
+
+See [here](queries.md)
