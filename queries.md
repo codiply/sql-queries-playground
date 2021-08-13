@@ -103,3 +103,81 @@ WHERE seat_row - previous_seat_row - 1 >= 5
   AND pct_full = 1.0
   AND previous_pct_full = 1.0
 ```
+
+Find all groups of 3 passengers that
+- Have boarded consecutively
+- They are seated on the same row next to each other
+- The order of boarding can be different from the order they are seated
+
+```
+WITH all_seats AS
+(
+SELECT aircraft_code 
+     , seat_no
+     , substring(seat_no, 1, length(seat_no) - 1)::integer AS row_no
+     , substring(seat_no, length(seat_no), 1) AS seat_letter
+FROM seats
+), joined_data AS
+(
+SELECT flights.flight_id 
+     , boarding_passes.seat_no
+     , boarding_passes.boarding_no 
+     , all_seats.row_no
+     , all_seats.seat_letter
+     , all_seats.aircraft_code
+FROM flights
+LEFT JOIN all_seats
+  ON all_seats.aircraft_code = flights.aircraft_code
+LEFT JOIN boarding_passes
+  ON boarding_passes.flight_id = flights.flight_id 
+  AND boarding_passes.seat_no = all_seats.seat_no
+WHERE flights.flight_id < 100 -- Remove to run query for all flights 
+), windows AS 
+(
+SELECT * 
+     , count(boarding_no) OVER w AS passenger_count
+     , min(boarding_no) OVER w AS minimum_boarding_number
+     , max(boarding_no) OVER w AS maximum_boarding_number
+FROM joined_data
+WINDOW w AS (PARTITION BY flight_id, row_no ORDER BY seat_letter ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING)
+), first_passenger_poarding AS
+(
+SELECT flight_id
+     , aircraft_code 
+     , minimum_boarding_number AS first_passenger_boarding_no
+     , ROW_NUMBER() OVER(PARTITION BY flight_id ORDER BY boarding_no) AS group_id
+FROM windows
+WHERE passenger_count = 3
+  AND maximum_boarding_number - minimum_boarding_number = 2
+), passenger_groups AS (
+SELECT flight_id
+     , aircraft_code 
+     , first_passenger_boarding_no AS boarding_no
+     , group_id
+FROM first_passenger_poarding
+UNION ALL
+SELECT flight_id
+     , aircraft_code 
+     , first_passenger_boarding_no + 1 AS boarding_no
+     , group_id
+FROM first_passenger_poarding
+UNION ALL 
+SELECT flight_id
+     , aircraft_code 
+     , first_passenger_boarding_no + 2 AS boarding_no
+     , group_id
+FROM first_passenger_poarding
+)
+SELECT passenger_groups.flight_id
+     , passenger_groups.group_id
+     , passenger_groups.boarding_no
+     , boarding_passes.seat_no
+     , passenger_groups.aircraft_code 
+FROM passenger_groups
+LEFT JOIN boarding_passes
+  ON passenger_groups.boarding_no = boarding_passes.boarding_no
+  AND passenger_groups.flight_id = boarding_passes.flight_id 
+ORDER BY passenger_groups.flight_id
+       , passenger_groups.group_id
+       , passenger_groups.boarding_no
+```
