@@ -181,3 +181,41 @@ ORDER BY passenger_groups.flight_id
        , passenger_groups.group_id
        , passenger_groups.boarding_no
 ```
+
+Average time in seconds between arrivals for a specific airport, month and hour
+
+```
+WITH arrivals AS
+(
+SELECT arrival_airport
+     , flight_id
+     , actual_arrival 
+     , DATE(actual_arrival) AS arrival_date
+     , EXTRACT (MONTH FROM actual_arrival) AS arrival_month
+     , EXTRACT (HOUR FROM actual_arrival) AS arrival_hour
+FROM flights
+WHERE actual_arrival IS NOT NULL 
+), consecutive_arrivals AS
+(
+SELECT *
+     , EXTRACT (EPOCH FROM actual_arrival - LAG(actual_arrival) OVER w) / 60 AS arrival_diff_minutes
+FROM arrivals
+WINDOW w AS (
+PARTITION BY arrival_airport, arrival_date
+ORDER BY actual_arrival)
+), arrival_stats AS 
+(
+SELECT arrival_airport
+     , arrival_month
+     , arrival_hour
+     , min(arrival_diff_minutes) AS min_arrival_diff_minutes
+     , avg(arrival_diff_minutes) AS avg_arrival_diff_minutes
+     , max(arrival_diff_minutes) AS max_arrival_diff_minutes
+FROM consecutive_arrivals
+WHERE arrival_diff_minutes IS NOT NULL
+GROUP BY arrival_airport, arrival_month, arrival_hour
+)
+SELECT *
+FROM arrival_stats
+ORDER BY avg_arrival_diff_minutes
+```
